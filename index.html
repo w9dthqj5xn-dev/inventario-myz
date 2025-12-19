@@ -327,6 +327,38 @@
         </section>
     </main>
 
-    <script src="script.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuytbgFsd-JK-gxbXjyOELh5wM-drSNBQ",
+            authDomain: "inventario-myz.firebaseapp.com",
+            projectId: "inventario-myz",
+            storageBucket: "inventario-myz.firebasestorage.app",
+            messagingSenderId: "600392871892",
+            appId: "1:600392871892:web:c08daaa453c07aee87b041",
+            measurementId: "G-31KBN7EF3C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Hacer disponibles las funciones de Firebase globalmente
+        window.firebaseDB = db;
+        window.firebaseCollection = collection;
+        window.firebaseGetDocs = getDocs;
+        window.firebaseAddDoc = addDoc;
+        window.firebaseUpdateDoc = updateDoc;
+        window.firebaseDeleteDoc = deleteDoc;
+        window.firebaseDoc = doc;
+        window.firebaseOnSnapshot = onSnapshot;
+        
+        // Cargar el script principal después de inicializar Firebase
+        const script = document.createElement('script');
+        script.src = 'script.js';
+        document.body.appendChild(script);
+    </script>
 </body>
 </html>

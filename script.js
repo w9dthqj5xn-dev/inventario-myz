@@ -117,8 +117,8 @@ function agregarEquipo() {
     // Agregar al array
     equipos.push(equipo);
     
-    // Guardar en localStorage
-    guardarEquipos();
+    // Guardar en Firebase y localStorage
+    guardarEquipoFirebase(equipo);
     
     // Limpiar filtros para mostrar el nuevo equipo
     document.getElementById('searchInput').value = '';
@@ -135,8 +135,12 @@ function agregarEquipo() {
 }
 
 // Función para eliminar equipo
-function eliminarEquipo(id) {
+async function eliminarEquipo(id) {
     if (confirm('¿Estás seguro de eliminar este equipo?')) {
+        const equipo = equipos.find(eq => eq.id === id);
+        if (equipo && equipo.firebaseId) {
+            await eliminarEquipoFirebase(equipo.firebaseId);
+        }
         equipos = equipos.filter(eq => eq.id !== id);
         guardarEquipos();
         actualizarTabla();
@@ -181,7 +185,7 @@ function venderEquipo(id) {
         minute: '2-digit'
     });
 
-    guardarEquipos();
+    guardarEquipoFirebase(equipo);
     actualizarTabla();
 
     const gananciaTexto = ganancia >= 0 ? 
@@ -443,7 +447,7 @@ function procesarVentaFinanciada() {
         saldoPendiente: saldoFinanciar
     };
     
-    guardarEquipos();
+    guardarEquipoFirebase(equipo);
     actualizarTabla();
     actualizarListaFinanciados();
     cerrarModalVentaFinanciada();
@@ -592,7 +596,7 @@ function pagarCuota(equipoId, numeroCuota) {
         // Generar número de recibo único
         cuota.numeroRecibo = `REC-${Date.now()}-${numeroCuota}`;
         
-        guardarEquipos();
+        guardarEquipoFirebase(equipo);
         
         // Cerrar y reabrir modal para actualizar
         cerrarModalGestionCuotas();
@@ -1081,38 +1085,87 @@ function actualizarTabla(equiposMostrar = equipos) {
 }
 
 // Funciones de localStorage
-function guardarEquipos() {
+// ============= FUNCIONES DE FIREBASE =============
+
+async function guardarEquipos() {
+    // Guardar también en localStorage como respaldo
     localStorage.setItem('inventario_myz_equipos', JSON.stringify(equipos));
     localStorage.setItem('inventario_myz_ultima_modificacion', new Date().toISOString());
 }
 
-function cargarEquipos() {
-    const equiposGuardados = localStorage.getItem('inventario_myz_equipos');
-    if (equiposGuardados) {
-        equipos = JSON.parse(equiposGuardados);
+async function cargarEquipos() {
+    try {
+        // Cargar desde Firebase
+        const querySnapshot = await window.firebaseGetDocs(window.firebaseCollection(window.firebaseDB, 'equipos'));
+        equipos = [];
         
-        // Migrar equipos antiguos sin precio de compra
-        equipos = equipos.map(equipo => {
-            if (!equipo.hasOwnProperty('precioCompra')) {
-                equipo.precioCompra = 0;
-            }
-            if (!equipo.hasOwnProperty('estado')) {
-                equipo.estado = 'En Inventario';
-            }
-            if (!equipo.hasOwnProperty('precioVenta')) {
-                equipo.precioVenta = null;
-            }
-            if (!equipo.hasOwnProperty('ganancia')) {
-                equipo.ganancia = null;
-            }
-            if (!equipo.hasOwnProperty('fechaVenta')) {
-                equipo.fechaVenta = null;
-            }
-            return equipo;
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            equipos.push({
+                ...data,
+                firebaseId: doc.id // Guardar el ID de Firebase
+            });
         });
         
-        // Guardar la migración
+        console.log('Equipos cargados desde Firebase:', equipos.length);
+        
+        // Si no hay equipos en Firebase, intentar migrar desde localStorage
+        if (equipos.length === 0) {
+            const equiposGuardados = localStorage.getItem('inventario_myz_equipos');
+            if (equiposGuardados) {
+                const equiposLocal = JSON.parse(equiposGuardados);
+                console.log('Migrando equipos desde localStorage a Firebase...');
+                
+                for (const equipo of equiposLocal) {
+                    await guardarEquipoFirebase(equipo);
+                }
+                
+                // Recargar después de la migración
+                await cargarEquipos();
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error cargando desde Firebase:', error);
+        // Fallback a localStorage
+        const equiposGuardados = localStorage.getItem('inventario_myz_equipos');
+        if (equiposGuardados) {
+            equipos = JSON.parse(equiposGuardados);
+            console.log('Cargados desde localStorage (fallback)');
+        }
+    }
+}
+
+async function guardarEquipoFirebase(equipo) {
+    try {
+        if (equipo.firebaseId) {
+            // Actualizar equipo existente
+            const equipoRef = window.firebaseDoc(window.firebaseDB, 'equipos', equipo.firebaseId);
+            const equipoData = { ...equipo };
+            delete equipoData.firebaseId; // No guardar el ID como campo
+            await window.firebaseUpdateDoc(equipoRef, equipoData);
+        } else {
+            // Crear nuevo equipo
+            const docRef = await window.firebaseAddDoc(window.firebaseCollection(window.firebaseDB, 'equipos'), equipo);
+            equipo.firebaseId = docRef.id;
+        }
+        
+        // También guardar en localStorage como respaldo
         guardarEquipos();
+    } catch (error) {
+        console.error('Error guardando en Firebase:', error);
+        // Al menos guardar en localStorage
+        guardarEquipos();
+    }
+}
+
+async function eliminarEquipoFirebase(firebaseId) {
+    try {
+        if (firebaseId) {
+            await window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDB, 'equipos', firebaseId));
+        }
+    } catch (error) {
+        console.error('Error eliminando de Firebase:', error);
     }
 }
 
@@ -1746,6 +1799,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
                 importados.forEach(equipo => {
                     if (!equipos.some(eq => eq.imei === equipo.imei)) {
                         equipos.push(equipo);
+                        guardarEquipoFirebase(equipo); // Guardar cada equipo en Firebase
                         agregados++;
                     } else {
                         duplicados++;
@@ -1807,6 +1861,10 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
             }
 
             equipos = backup.datos;
+            // Guardar todos en Firebase
+            for (const equipo of equipos) {
+                await guardarEquipoFirebase(equipo);
+            }
             guardarEquipos();
             actualizarTabla();
             
