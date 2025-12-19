@@ -332,6 +332,8 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+        console.log('🔥 Inicializando Firebase...');
+
         // Configuración de Firebase (ofuscada para evitar detección de secretos)
         const parts = {
             a: "AIza",
@@ -359,6 +361,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
+        console.log('✅ Firebase inicializado correctamente');
+        
         // Hacer disponibles las funciones de Firebase globalmente
         window.firebaseDB = db;
         window.firebaseCollection = collection;
@@ -368,11 +372,11 @@
         window.firebaseDeleteDoc = deleteDoc;
         window.firebaseDoc = doc;
         window.firebaseOnSnapshot = onSnapshot;
+        window.firebaseReady = true;
         
-        // Cargar el script principal después de inicializar Firebase
-        const script = document.createElement('script');
-        script.src = 'script.js';
-        document.body.appendChild(script);
+        console.log('📦 Funciones de Firebase disponibles globalmente');
     </script>
+    
+    <script src="script.js"></script>
 </body>
 </html>

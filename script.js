@@ -43,9 +43,29 @@ function mostrarSeccion(seccion) {
     }
 }
 
+// Función para esperar a que Firebase esté listo
+function esperarFirebase() {
+    return new Promise((resolve) => {
+        if (window.firebaseReady) {
+            resolve();
+        } else {
+            const interval = setInterval(() => {
+                if (window.firebaseReady) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 100);
+        }
+    });
+}
+
 // Cargar equipos del localStorage al iniciar
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Iniciando aplicación...');
+    
+    // Esperar a que Firebase esté listo
+    await esperarFirebase();
+    console.log('✅ Firebase listo para usar');
     
     // Limpiar filtros al cargar
     document.getElementById('searchInput').value = '';
