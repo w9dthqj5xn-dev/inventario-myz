@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sistema - M y Z Smart Phone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .splash {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .emoji {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        p {
+            color: #6b7280;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+        .version {
+            margin-top: 30px;
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            color: #3b82f6;
+        }
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="splash">
+        <div class="emoji">📱</div>
+        <h1>Sistema de Inventario</h1>
+        <p>M y Z Smart Phone RD</p>
+        <a href="index.html" class="btn">🚀 Iniciar Sistema</a>
+        <div class="loading" id="loading">
+            <p>Cargando sistema...</p>
+        </div>
+        <div class="version">
+            Versión 1.0 | © 2025
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.btn').addEventListener('click', function(e) {
+            document.getElementById('loading').classList.add('active');
+        });
+    </script>
+</body>
+</html>

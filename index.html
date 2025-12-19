@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario/Ventas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>📱 Sistema "nombre de tu tienda"</h2>
+            <p>Sistema de Gestión</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="mostrarSeccion('inventario')">
+                <span class="icon">📦</span>
+                <span class="text">Inventario</span>
+            </button>
+            <button class="nav-item" onclick="mostrarSeccion('agregar')">
+                <span class="icon">➕</span>
+                <span class="text">Agregar Equipo</span>
+            </button>
+            <button class="nav-item" onclick="mostrarSeccion('ventas')">
+                <span class="icon">💰</span>
+                <span class="text">Ventas</span>
+            </button>
+            <button class="nav-item" onclick="mostrarSeccion('financiamiento')">
+                <span class="icon">💳</span>
+                <span class="text">Financiamiento</span>
+            </button>
+            <button class="nav-item" onclick="mostrarSeccion('reportes')">
+                <span class="icon">📊</span>
+                <span class="text">Reportes</span>
+            </button>
+            <button class="nav-item" onclick="mostrarSeccion('gestion')">
+                <span class="icon">⚙️</span>
+                <span class="text">Gestión de Datos</span>
+            </button>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <p>© 2025 "M&Z Inventario"</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <h1 id="seccionTitulo">📦 Inventario de Equipos</h1>
+            <div class="header-stats" id="headerStats">
+                <!-- Stats dinámicos según la sección -->
+            </div>
+        </header>
+        
+        <!-- Sección: Inventario -->
+        <section id="seccion-inventario" class="seccion-content active">
+            <!-- Stats del Inventario -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Equipos</span>
+                        <span class="stat-value" id="totalEquipos">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <span class="stat-label">En Inventario</span>
+                        <span class="stat-value" id="equiposDisponibles">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Vendidos</span>
+                        <span class="stat-value" id="equiposVendidos">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💳</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Financiados</span>
+                        <span class="stat-value" id="equiposFinanciados">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filtro de búsqueda -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔍 Buscar Equipos</h2>
+                </div>
+                <div class="card-body">
+                    <div class="search-filters">
+                        <input type="text" id="searchInput" placeholder="Buscar por marca, modelo, IMEI o suplidor...">
+                        
+                        <select id="filterTipo" title="Filtrar por tipo de equipo">
+                            <option value="">Todos los tipos</option>
+                            <option value="Celular">Celular</option>
+                            <option value="Tablet">Tablet</option>
+                            <option value="Reloj">Reloj</option>
+                        </select>
+
+                        <button id="btnLimpiar" class="btn-clear">Limpiar Filtros</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de equipos -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Lista de Equipos</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="equiposTable">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>IMEI</th>
+                                    <th>Suplidor</th>
+                                    <th>Precio Compra</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equiposBody">
+                                <tr class="empty-state">
+                                    <td colspan="9">No hay equipos registrados</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: Agregar Equipo -->
+        <section id="seccion-agregar" class="seccion-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>➕ Registrar Nuevo Equipo</h2>
+                </div>
+                <div class="card-body">
+            <form id="equipoForm">
+                <div class="form-group">
+                    <label for="tipo">Tipo de Equipo:</label>
+                    <select id="tipo" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Celular">Celular</option>
+                        <option value="Tablet">Tablet</option>
+                        <option value="Reloj">Reloj</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="marca">Marca:</label>
+                    <input type="text" id="marca" required placeholder="Ej: Samsung, Apple, Xiaomi">
+                </div>
+
+                <div class="form-group">
+                    <label for="modelo">Modelo:</label>
+                    <input type="text" id="modelo" required placeholder="Ej: Galaxy S23, iPhone 15">
+                </div>
+
+                <div class="form-group">
+                    <label for="imei">IMEI:</label>
+                    <input type="text" id="imei" required placeholder="Número IMEI del equipo" pattern="[0-9]{10,20}">
+                    <small>Debe contener entre 10 y 20 dígitos</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="suplidor">Suplidor:</label>
+                    <input type="text" id="suplidor" required placeholder="Nombre del suplidor">
+                </div>
+
+                <div class="form-group">
+                    <label for="precioCompra">Precio de Compra (RD$):</label>
+                    <input type="number" id="precioCompra" required placeholder="0.00" step="0.01" min="0">
+                </div>
+
+                <button type="submit" class="btn-submit">✅ Agregar Equipo</button>
+            </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: Ventas -->
+        <section id="seccion-ventas" class="seccion-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💰 Gestión de Ventas</h2>
+                </div>
+                <div class="card-body">
+                    <p class="info-text">Las ventas se realizan directamente desde el inventario usando el botón "Vender" en cada equipo disponible.</p>
+                    <div class="quick-actions">
+                        <button onclick="mostrarSeccion('inventario')" class="btn-action-card">
+                            <span class="icon-large">📦</span>
+                            <h3>Ir a Inventario</h3>
+                            <p>Ver equipos disponibles para vender</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: Financiamiento -->
+        <section id="seccion-financiamiento" class="seccion-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💳 Nueva Venta Financiada</h2>
+                </div>
+                <div class="card-body">
+                    <p class="info-text">Registra una nueva venta a crédito con plan de cuotas personalizado.</p>
+                    <div class="quick-actions">
+                        <button id="btnVentasFinanciadas" class="btn-action-card btn-primary">
+                            <span class="icon-large">💳</span>
+                            <h3>Registrar Venta Financiada</h3>
+                            <p>Crear un nuevo plan de financiamiento</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Equipos Financiados -->
+            <div class="card">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>📋 Equipos Financiados (<span id="totalFinanciados">0</span>)</h2>
+                        <div class="financiamiento-stats">
+                            <span class="stat-small">Total por Cobrar: <strong id="totalPorCobrar">RD$ 0.00</strong></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="listaFinanciados" class="lista-financiados">
+                        <div class="empty-financiados">
+                            <span class="icon-empty">💳</span>
+                            <p>No hay equipos financiados registrados</p>
+                            <small>Los equipos vendidos con financiamiento aparecerán aquí</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: Reportes -->
+        <section id="seccion-reportes" class="seccion-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Reportes y Análisis</h2>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <button id="btnReporteVentas" class="btn-action-card btn-success">
+                            <span class="icon-large">🧾</span>
+                            <h3>Reporte de Ventas</h3>
+                            <p>Generar reporte detallado de ventas realizadas</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: Gestión de Datos -->
+        <section id="seccion-gestion" class="seccion-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>⚙️ Gestión y Seguridad de Datos</h2>
+                </div>
+                <div class="card-body">
+                    <div class="action-grid">
+                        <button id="btnExportarJSON" class="btn-action-grid">
+                            <span class="icon-action">📥</span>
+                            <h4>Exportar JSON</h4>
+                            <p>Exportar datos en formato JSON</p>
+                        </button>
+                        
+                        <button id="btnExportarExcel" class="btn-action-grid">
+                            <span class="icon-action">📊</span>
+                            <h4>Exportar Excel</h4>
+                            <p>Exportar datos en formato CSV</p>
+                        </button>
+                        
+                        <button id="btnImportar" class="btn-action-grid">
+                            <span class="icon-action">📤</span>
+                            <h4>Importar Datos</h4>
+                            <p>Importar desde archivo JSON</p>
+                        </button>
+                        
+                        <button id="btnBackup" class="btn-action-grid">
+                            <span class="icon-action">💾</span>
+                            <h4>Crear Backup</h4>
+                            <p>Crear respaldo completo</p>
+                        </button>
+                        
+                        <button id="btnRestaurar" class="btn-action-grid">
+                            <span class="icon-action">♻️</span>
+                            <h4>Restaurar Backup</h4>
+                            <p>Recuperar desde respaldo</p>
+                        </button>
+                    </div>
+                    
+                    <input type="file" id="fileInput" accept=".json" class="hidden-input">
+                    <input type="file" id="backupInput" accept=".json" class="hidden-input">
+                    
+                    <div class="info-box">
+                        <strong>ℹ️ Información de Seguridad:</strong>
+                        <p>Los datos se almacenan localmente en tu navegador. Para mayor seguridad:</p>
+                        <ul>
+                            <li>Exporta regularmente tus datos a archivos JSON o Excel</li>
+                            <li>Crea backups antes de realizar cambios importantes</li>
+                            <li>Los archivos exportados pueden guardarse en ubicaciones seguras</li>
+                            <li>Última exportación: <span id="ultimaExportacion">Nunca</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
