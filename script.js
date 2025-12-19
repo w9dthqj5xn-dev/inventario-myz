@@ -1095,19 +1095,30 @@ async function guardarEquipos() {
 
 async function cargarEquipos() {
     try {
+        console.log('Iniciando carga desde Firebase...');
+        console.log('Firebase DB disponible:', !!window.firebaseDB);
+        
         // Cargar desde Firebase
         const querySnapshot = await window.firebaseGetDocs(window.firebaseCollection(window.firebaseDB, 'equipos'));
         equipos = [];
         
+        console.log('Documentos encontrados en Firebase:', querySnapshot.size);
+        
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            console.log('Cargando equipo:', data.marca, data.modelo);
             equipos.push({
                 ...data,
                 firebaseId: doc.id // Guardar el ID de Firebase
             });
         });
         
-        console.log('Equipos cargados desde Firebase:', equipos.length);
+        console.log('✅ Equipos cargados desde Firebase:', equipos.length);
+        
+        // Actualizar la tabla después de cargar
+        if (equipos.length > 0) {
+            actualizarTabla();
+        }
         
         // Si no hay equipos en Firebase, intentar migrar desde localStorage
         if (equipos.length === 0) {
