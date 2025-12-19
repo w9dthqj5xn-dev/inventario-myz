@@ -72,7 +72,7 @@ document.getElementById('btnLimpiar').addEventListener('click', () => {
 });
 
 // Función para agregar equipo
-function agregarEquipo() {
+async function agregarEquipo() {
     const tipo = document.getElementById('tipo').value;
     const marca = document.getElementById('marca').value.trim();
     const modelo = document.getElementById('modelo').value.trim();
@@ -118,7 +118,7 @@ function agregarEquipo() {
     equipos.push(equipo);
     
     // Guardar en Firebase y localStorage
-    guardarEquipoFirebase(equipo);
+    await guardarEquipoFirebase(equipo);
     
     // Limpiar filtros para mostrar el nuevo equipo
     document.getElementById('searchInput').value = '';
@@ -149,7 +149,7 @@ async function eliminarEquipo(id) {
 }
 
 // Función para vender equipo
-function venderEquipo(id) {
+async function venderEquipo(id) {
     const equipo = equipos.find(eq => eq.id === id);
     if (!equipo) return;
 
@@ -185,7 +185,7 @@ function venderEquipo(id) {
         minute: '2-digit'
     });
 
-    guardarEquipoFirebase(equipo);
+    await guardarEquipoFirebase(equipo);
     actualizarTabla();
 
     const gananciaTexto = ganancia >= 0 ? 
@@ -354,7 +354,7 @@ function calcularCuotas() {
     document.getElementById('resumenCuota').textContent = `RD$ ${cuotaMensual.toLocaleString('es-DO', {minimumFractionDigits: 2})}`;
 }
 
-function procesarVentaFinanciada() {
+async function procesarVentaFinanciada() {
     const equipoId = parseInt(document.getElementById('equipoFinanciado').value);
     const nombreCliente = document.getElementById('nombreCliente').value.trim();
     const cedulaCliente = document.getElementById('cedulaCliente').value.trim();
@@ -447,7 +447,7 @@ function procesarVentaFinanciada() {
         saldoPendiente: saldoFinanciar
     };
     
-    guardarEquipoFirebase(equipo);
+    await guardarEquipoFirebase(equipo);
     actualizarTabla();
     actualizarListaFinanciados();
     cerrarModalVentaFinanciada();
@@ -576,7 +576,7 @@ function cerrarModalGestionCuotas() {
     }
 }
 
-function pagarCuota(equipoId, numeroCuota) {
+async function pagarCuota(equipoId, numeroCuota) {
     const equipo = equipos.find(eq => eq.id === equipoId);
     if (!equipo || !equipo.financiamiento) return;
     
@@ -596,7 +596,7 @@ function pagarCuota(equipoId, numeroCuota) {
         // Generar número de recibo único
         cuota.numeroRecibo = `REC-${Date.now()}-${numeroCuota}`;
         
-        guardarEquipoFirebase(equipo);
+        await guardarEquipoFirebase(equipo);
         
         // Cerrar y reabrir modal para actualizar
         cerrarModalGestionCuotas();
@@ -1777,7 +1777,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
         try {
             const importados = JSON.parse(event.target.result);
             
@@ -1796,15 +1796,15 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
                 let agregados = 0;
                 let duplicados = 0;
 
-                importados.forEach(equipo => {
+                for (const equipo of importados) {
                     if (!equipos.some(eq => eq.imei === equipo.imei)) {
                         equipos.push(equipo);
-                        guardarEquipoFirebase(equipo); // Guardar cada equipo en Firebase
+                        await guardarEquipoFirebase(equipo); // Guardar cada equipo en Firebase
                         agregados++;
                     } else {
                         duplicados++;
                     }
-                });
+                }
 
                 guardarEquipos();
                 actualizarTabla();
@@ -1852,7 +1852,7 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
         try {
             const backup = JSON.parse(event.target.result);
             
