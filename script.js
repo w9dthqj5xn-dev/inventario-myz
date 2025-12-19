@@ -44,14 +44,20 @@ function mostrarSeccion(seccion) {
 }
 
 // Cargar equipos del localStorage al iniciar
-document.addEventListener('DOMContentLoaded', () => {
-    cargarEquipos();
-    cargarUltimaExportacion();
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Iniciando aplicación...');
+    
     // Limpiar filtros al cargar
     document.getElementById('searchInput').value = '';
     document.getElementById('filterTipo').value = '';
-    actualizarTabla();
-    console.log('Equipos cargados:', equipos.length);
+    
+    // Cargar equipos desde Firebase (esperar a que termine)
+    await cargarEquipos();
+    
+    // Cargar última exportación
+    cargarUltimaExportacion();
+    
+    console.log('✅ Aplicación lista. Total equipos:', equipos.length);
 });
 
 // Formulario de registro
