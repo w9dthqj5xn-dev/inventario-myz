@@ -2048,15 +2048,23 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
             }
 
             // Borrar TODO lo existente en Firebase para restaurar desde cero
-            const existentes = await window.firebaseGetDocs(window.firebaseCollection(window.firebaseDB, 'equipos'));
-            for (const d of existentes.docs) {
-                await window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDB, 'equipos', d.id));
+            const estado = crearIndicadorProgreso();
+            try {
+                estado.texto('Leyendo datos actuales...');
+                const existentes = await window.firebaseGetDocs(window.firebaseCollection(window.firebaseDB, 'equipos'));
+                await ejecutarEnLotes(existentes.docs, 25, (d) =>
+                    window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDB, 'equipos', d.id)),
+                    (n, t) => estado.texto(`Borrando datos actuales: ${n}/${t}`));
+
+                equipos = datosLimpios;
+                await ejecutarEnLotes(equipos, 25, async (equipo) => {
+                    const ref = await window.firebaseAddDoc(window.firebaseCollection(window.firebaseDB, 'equipos'), equipo);
+                    equipo.firebaseId = ref.id;
+                }, (n, t) => estado.texto(`Subiendo backup: ${n}/${t}`));
+            } finally {
+                estado.cerrar();
             }
 
-            equipos = datosLimpios;
-            for (const equipo of equipos) {
-                await guardarEquipoFirebase(equipo);
-            }
             guardarEquipos();
             actualizarTabla();
             
@@ -2073,6 +2081,22 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
     reader.readAsText(file);
     e.target.value = '';
 });
+
+// Ejecuta tareas en paralelo por lotes; si alguna falla, lanza el error
+async function ejecutarEnLotes(items, tamano, tarea, progreso) {
+    for (let i = 0; i < items.length; i += tamano) {
+        await Promise.all(items.slice(i, i + tamano).map(tarea));
+        progreso(Math.min(i + tamano, items.length), items.length);
+    }
+}
+
+function crearIndicadorProgreso() {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:14px;text-align:center;background:#1e40af;color:#fff;font-weight:bold;font-size:16px;';
+    el.textContent = 'Restaurando backup...';
+    document.body.appendChild(el);
+    return { texto: (t) => { el.textContent = t; }, cerrar: () => el.remove() };
+}
 
 // Funciones auxiliares
 function obtenerFechaArchivo() {
