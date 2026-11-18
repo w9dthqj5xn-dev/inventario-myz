@@ -5,8 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario/Ventas</title>
     <link rel="stylesheet" href="styles.css">
+    <script>
+        (function () {
+            const session = localStorage.getItem('inventario_myz_auth') || sessionStorage.getItem('inventario_myz_auth');
+            if (session) {
+                document.documentElement.classList.add('autenticado');
+            }
+        })();
+    </script>
 </head>
 <body>
+    <section id="loginScreen" class="login-screen" aria-labelledby="loginTitle">
+        <div class="login-glow login-glow-left"></div>
+        <div class="login-glow login-glow-right"></div>
+        <div class="login-card">
+            <div class="login-badge">🔐 Acceso seguro</div>
+            <h1 id="loginTitle">M&Z Inventario</h1>
+            <p class="login-subtitle">Esta instalación usa una sola cuenta autorizada para administrar equipos, ventas y financiamientos.</p>
+
+            <form id="loginForm" class="login-form" autocomplete="on">
+                <label for="loginUsuario">Usuario</label>
+                <input id="loginUsuario" name="usuario" type="text" value="joelzapata@m&z.com" autocomplete="username" readonly aria-readonly="true">
+                <small class="login-note">Usuario fijo del sistema</small>
+
+                <label for="loginPassword">Contraseña</label>
+                <input id="loginPassword" name="password" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+
+                <label class="login-check">
+                    <input id="recordarSesion" type="checkbox">
+                    <span>Recordar sesión en este equipo</span>
+                </label>
+
+                <button type="submit" class="login-button">Entrar al sistema</button>
+                <p id="loginMensaje" class="login-message" aria-live="polite"></p>
+                <p class="login-help">Acceso autorizado para Joel Zapata.</p>
+            </form>
+        </div>
+    </section>
+
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -42,6 +78,7 @@
         </nav>
         
         <div class="sidebar-footer">
+            <button id="btnCerrarSesion" class="btn-logout" type="button">Cerrar sesión</button>
             <p>© 2025 "M&Z Inventario"</p>
         </div>
     </aside>
