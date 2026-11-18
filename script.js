@@ -2018,9 +2018,7 @@ document.getElementById('btnBackup').addEventListener('click', () => {
 
 // Restaurar Backup
 document.getElementById('btnRestaurar').addEventListener('click', () => {
-    if (!confirm('⚠️ ¿Estás seguro de restaurar un backup? Esto REEMPLAZARÁ todos los datos actuales.')) {
-        return;
-    }
+    // Safari bloquea el selector de archivos si se abre después de un confirm()
     document.getElementById('backupInput').click();
 });
 
@@ -2035,6 +2033,10 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
             
             if (!backup.datos || !Array.isArray(backup.datos)) {
                 throw new Error('Formato de backup inválido');
+            }
+
+            if (!confirm(`⚠️ ¿Restaurar el backup con ${backup.datos.length} registros?\nEsto REEMPLAZARÁ todos los datos actuales.`)) {
+                return;
             }
 
             // Quitar duplicados del backup (mismo id) y firebaseId obsoletos
