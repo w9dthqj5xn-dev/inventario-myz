@@ -1,5 +1,95 @@
 // Array para almacenar los equipos
 let equipos = [];
+let aplicacionInicializada = false;
+
+const USUARIO_VALIDO = 'joelzapata@m&z.com';
+const PASSWORD_VALIDA = 'Mangon123!';
+const AUTH_KEY = 'inventario_myz_auth';
+
+function obtenerSesionGuardada() {
+    try {
+        return localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+    } catch (error) {
+        return null;
+    }
+}
+
+function estaAutenticado() {
+    return Boolean(obtenerSesionGuardada());
+}
+
+function mostrarPantallaAutenticada() {
+    document.documentElement.classList.add('autenticado');
+    const loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) {
+        loginScreen.style.display = 'none';
+    }
+}
+
+function mostrarPantallaLogin(mensaje = '') {
+    document.documentElement.classList.remove('autenticado');
+    const loginScreen = document.getElementById('loginScreen');
+    const loginMensaje = document.getElementById('loginMensaje');
+    const loginPassword = document.getElementById('loginPassword');
+    if (loginScreen) {
+        loginScreen.style.display = 'flex';
+    }
+    if (loginMensaje) {
+        loginMensaje.textContent = mensaje;
+    }
+    if (loginPassword) {
+        loginPassword.value = '';
+        loginPassword.focus();
+    }
+}
+
+function guardarSesion(usarLocalStorage) {
+    const data = JSON.stringify({ usuario: USUARIO_VALIDO, fecha: new Date().toISOString() });
+    try {
+        sessionStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(AUTH_KEY);
+
+        if (usarLocalStorage) {
+            localStorage.setItem(AUTH_KEY, data);
+        } else {
+            sessionStorage.setItem(AUTH_KEY, data);
+        }
+    } catch (error) {
+        sessionStorage.setItem(AUTH_KEY, data);
+    }
+}
+
+async function inicializarAplicacion() {
+    if (aplicacionInicializada) {
+        return;
+    }
+
+    aplicacionInicializada = true;
+
+    console.log('🚀 Iniciando aplicación...');
+    await esperarFirebase();
+    console.log('✅ Firebase listo para usar');
+
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterTipo').value = '';
+
+    await cargarEquipos();
+    cargarUltimaExportacion();
+
+    console.log('✅ Aplicación lista. Total equipos:', equipos.length);
+}
+
+function cerrarSesion() {
+    try {
+        sessionStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(AUTH_KEY);
+    } catch (error) {
+        // Ignorar errores de almacenamiento y dejar la UI lista para reintento.
+    }
+
+    aplicacionInicializada = false;
+    mostrarPantallaLogin('Sesión cerrada. Vuelve a ingresar para continuar.');
+}
 
 // Función para mostrar sección
 function mostrarSeccion(seccion) {
@@ -61,23 +151,46 @@ function esperarFirebase() {
 
 // Cargar equipos del localStorage al iniciar
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Iniciando aplicación...');
-    
-    // Esperar a que Firebase esté listo
-    await esperarFirebase();
-    console.log('✅ Firebase listo para usar');
-    
-    // Limpiar filtros al cargar
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterTipo').value = '';
-    
-    // Cargar equipos desde Firebase (esperar a que termine)
-    await cargarEquipos();
-    
-    // Cargar última exportación
-    cargarUltimaExportacion();
-    
-    console.log('✅ Aplicación lista. Total equipos:', equipos.length);
+    const loginForm = document.getElementById('loginForm');
+    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+    const loginUsuario = document.getElementById('loginUsuario');
+    const loginMensaje = document.getElementById('loginMensaje');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const usuario = loginUsuario?.value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword')?.value ?? '';
+            const recordarSesion = document.getElementById('recordarSesion')?.checked ?? false;
+
+            if (usuario === USUARIO_VALIDO && password === PASSWORD_VALIDA) {
+                guardarSesion(recordarSesion);
+                if (loginMensaje) {
+                    loginMensaje.textContent = '';
+                }
+                mostrarPantallaAutenticada();
+                await inicializarAplicacion();
+                return;
+            }
+
+            if (loginMensaje) {
+                loginMensaje.textContent = 'Usuario o contraseña incorrectos.';
+            }
+        });
+    }
+
+    if (btnCerrarSesion) {
+        btnCerrarSesion.addEventListener('click', cerrarSesion);
+    }
+
+    if (estaAutenticado()) {
+        mostrarPantallaAutenticada();
+        await inicializarAplicacion();
+        return;
+    }
+
+    mostrarPantallaLogin();
 });
 
 // Formulario de registro
@@ -178,6 +291,12 @@ async function eliminarEquipo(id) {
 async function venderEquipo(id) {
     const equipo = equipos.find(eq => eq.id === id);
     if (!equipo) return;
+
+    // Evitar venta duplicada (doble clic o condición de carrera)
+    if (equipo.estado !== 'En Inventario') {
+        alert('⚠️ Este equipo ya fue vendido y no puede procesarse de nuevo.');
+        return;
+    }
 
     const precioVenta = prompt(
         `🛒 VENDER EQUIPO\n\n` +
@@ -425,7 +544,14 @@ async function procesarVentaFinanciada() {
         alert('⚠️ Equipo no encontrado');
         return;
     }
-    
+
+    // Evitar venta duplicada (doble clic o condición de carrera)
+    if (equipo.estado !== 'En Inventario') {
+        alert('⚠️ Este equipo ya fue vendido y no está disponible en inventario.');
+        cerrarModalVentaFinanciada();
+        return;
+    }
+
     const saldoFinanciar = precioVenta - inicial;
     const cuotaMensual = saldoFinanciar / numCuotas;
     const ganancia = precioVenta - equipo.precioCompra;
@@ -1141,6 +1267,20 @@ async function cargarEquipos() {
         
         console.log('✅ Equipos cargados desde Firebase:', equipos.length);
         
+        // Eliminar duplicados por IMEI (conservar el más reciente por fecha de carga)
+        const imeiVistos = new Set();
+        equipos = equipos.filter(eq => {
+            if (imeiVistos.has(eq.imei)) {
+                console.warn('⚠️ Duplicado detectado y eliminado:', eq.imei);
+                return false;
+            }
+            imeiVistos.add(eq.imei);
+            return true;
+        });
+        if (equipos.length < querySnapshot.size) {
+            console.warn(`⚠️ Se eliminaron ${querySnapshot.size - equipos.length} registros duplicados del inventario`);
+        }
+
         // Actualizar la tabla después de cargar
         if (equipos.length > 0) {
             actualizarTabla();
@@ -1897,8 +2037,23 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
                 throw new Error('Formato de backup inválido');
             }
 
-            equipos = backup.datos;
-            // Guardar todos en Firebase
+            // Quitar duplicados del backup (mismo id) y firebaseId obsoletos
+            const idsVistos = new Set();
+            const datosLimpios = [];
+            for (const eq of backup.datos) {
+                if (idsVistos.has(eq.id)) continue;
+                idsVistos.add(eq.id);
+                const { firebaseId, ...limpio } = eq;
+                datosLimpios.push(limpio);
+            }
+
+            // Borrar TODO lo existente en Firebase para restaurar desde cero
+            const existentes = await window.firebaseGetDocs(window.firebaseCollection(window.firebaseDB, 'equipos'));
+            for (const d of existentes.docs) {
+                await window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDB, 'equipos', d.id));
+            }
+
+            equipos = datosLimpios;
             for (const equipo of equipos) {
                 await guardarEquipoFirebase(equipo);
             }
@@ -1908,7 +2063,8 @@ document.getElementById('backupInput').addEventListener('change', (e) => {
             alert(
                 `✅ Backup restaurado exitosamente\n\n` +
                 `📅 Fecha del backup: ${new Date(backup.fecha).toLocaleString('es-ES')}\n` +
-                `📊 Equipos restaurados: ${backup.total}`
+                `📊 Equipos restaurados: ${equipos.length}\n` +
+                `🧹 Duplicados omitidos: ${backup.datos.length - equipos.length}`
             );
         } catch (error) {
             alert('❌ Error al restaurar el backup: ' + error.message);
